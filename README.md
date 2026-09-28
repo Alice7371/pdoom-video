@@ -30,6 +30,20 @@ The concept, style bible and plate-by-plate treatment are in [`docs/TREATMENT.md
 
 [bun](https://bun.sh), Google Chrome (the offline renderer drives it headless through playwright-core) and ffmpeg with libx264. The analysis tools need [uv](https://docs.astral.sh/uv/); the renderer doesn't.
 
+## Windows notes
+
+The renderer was written for macOS/Linux. This fork adds Windows support; three things are needed (the first is already applied in `scripts/render.ts`):
+
+1. **GPU rendering.** Headless Chrome was launched with `--use-angle=metal` (macOS-only). On Windows it silently falls back to SwiftShader, loses the WebGL context and renders white frames. `scripts/render.ts` now picks `--use-angle=d3d11` on win32. Verify with `bun scripts/render.ts gpu` — it should print your GPU, not `SwiftShader`.
+2. **`app/public/audio` and `app/public/data` are symlinks** into the repo root; a Windows checkout turns them into dead text files and the app fails to boot ("no audio analysis data found"). Replace them with directory junctions (no admin rights needed):
+   ```bat
+   cd app\public
+   del audio data
+   mklink /J audio C:\absolute\path\to\pdoom-video\audio
+   mklink /J data C:\absolute\path\to\pdoom-video\data
+   ```
+3. **`bunx`.** The `bun-windows-x64.zip` ships only `bun.exe`; `bunx.exe` is just a copy of it (`cp bun.exe bunx.exe`).
+
 ## Preview
 
 ```sh
